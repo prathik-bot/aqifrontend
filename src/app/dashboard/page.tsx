@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect } from 'react';
 import Grid from '@mui/material/Unstable_Grid2';
 import { HistoricAQI } from '@/components/dashboard/overview/historicaqi';
@@ -7,8 +8,7 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import CardActionArea from '@mui/material/CardActionArea';
 import { Aqidata } from '@/components/dashboard/overview/aqidata';
-import { red } from '@mui/material/colors';
-import { getLiveAQI, getAQIForecast } from '../../services/aqiService';
+import { getLiveAQI } from '../../services/aqiService';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { styled, lighten, darken } from '@mui/system';
@@ -20,23 +20,14 @@ import DialogTitle from '@mui/material/DialogTitle';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import Button from '@mui/material/Button';
-import { TransitionProps } from '@mui/material/transitions';
 import Slide from '@mui/material/Slide';
-import {
-  GaugeContainer,
-  GaugeValueArc,
-  GaugeReferenceArc,
-  useGaugeState,
-} from '@mui/x-charts/Gauge';
+import Papa from 'papaparse';
+import { Divider, Icon } from '@mui/material'; 
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper} from '@mui/material';
 
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & {
-    children: React.ReactElement<any, any>;
-  },
-  ref: React.Ref<unknown>,
-) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+const Transition = React.forwardRef((props, ref) => (
+  <Slide direction="up" ref={ref} {...props} />
+));
 
 const GroupHeader = styled('div')(({ theme }) => ({
   position: 'sticky',
@@ -44,290 +35,131 @@ const GroupHeader = styled('div')(({ theme }) => ({
   padding: '4px 10px',
   color: theme.palette.primary.main,
   backgroundColor: lighten(theme.palette.primary.light, 0.85),
-  ...theme.applyStyles('dark', {
-    backgroundColor: darken(theme.palette.primary.main, 0.8),
-  }),
 }));
-const GroupItems = styled('ul')({
-  padding: 0,
-});
 
-export default function Page(): React.JSX.Element {
-  const [zipCode, setZipCode] = useState('');
+const GroupItems = styled('ul')({ padding: 0 });
+
+const ALLOWED_ZIP_CODES = [
+  { code: '95112', location: 'San Jose' },
+  { code: '95014', location: 'Cupertino' },
+];
+
+export default function Page() {
+  const [zipCode, setZipCode] = useState(null);
   const [liveAQI, setLiveAQI] = useState(null);
   const [open, setOpen] = useState(false);
-  const [pollution,setPollution] = useState(0);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
-  const handleClose = () => {
-    setOpen(false);
-  };
+  const [featureData, setFeatureData] = useState<(number | 'N/A')[]>([]);
+
+
+  const handleClose = () => setOpen(false);
+
   const fetchLiveAQI = async (selectedZipCode) => {
     try {
       const data = await getLiveAQI(selectedZipCode.code);
       setLiveAQI(data);
     } catch (error) {
-      setOpen(true);     
+      setOpen(true);
     }
   };
-  const options = ALLOWED_ZIP_CODES.map((option) => {
-    const firstLetter = option.code[0].toUpperCase();
-    return {
-      firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter,
-      ...option,
-    };
-  });
+  useEffect(() => {
+    fetch('/feature.csv')
+      .then(response => response.text())
+      .then(csvText => {
+        const parsedData = Papa.parse(csvText, { header: false, skipEmptyLines: true }).data;
+        
+        if (parsedData.length > 1) {
+          // Convert values to numbers and handle NaN/Infinity cases
+          const numericData = parsedData[1].map(value => {
+            const num = parseFloat(value.trim()); // Trim spaces and convert to number
+            return isFinite(num) ? num : 'N/A'; // Replace Inf/NaN with 'N/A'
+          });
   
-
-  useEffect(() => { 
-      var i = 0;   
-      while (i>100) {
-        setInterval(()=>{setPollution(i);}, 400);
-        i++;
-      }
+          setFeatureData(numericData);
+          console.log('Parsed Feature Data:', numericData);
+        }
+      })
       
-      
+      .catch(error => console.error('Error loading CSV:', error));
   }, []);
-
-  function GaugePointer() {
-  const { valueAngle, outerRadius, cx, cy } = useGaugeState();
-
-  if (valueAngle === null) {
-    // No value to display
-    return null;
-  }
-
-  const target = {
-    x: cx + outerRadius * Math.sin(valueAngle),
-    y: cy - outerRadius * Math.cos(valueAngle),
-  };
-  return (
-    <g>
-      <circle cx={cx} cy={cy} r={5} fill="red" />
-      <path
-        d={`M ${cx} ${cy} L ${target.x} ${target.y}`}
-        stroke="red"
-        strokeWidth={3}
-      />
-    </g>
-  );
-}
   
+  const featureHeaders = [
+    { name: 'PM2.5', icon: 'pm25.png' },
+    { name: 'Temperature', icon: 'tempF.png' },
+    { name: 'Humidity', icon: 'humidity.png' },
+    { name: 'Wind Speed', icon: 'wind.png' },
+    { name: 'Pressure', icon: 'pressure.png' },
+    { name: 'Precipitation', icon: 'precipitation.png' },
+    { name: 'Cloud Cover', icon: 'cloud.png' },
+  ];
+  const options = ALLOWED_ZIP_CODES.map((option) => ({
+    firstLetter: /[0-9]/.test(option.code[0]) ? '0-9' : option.code[0].toUpperCase(),
+    ...option,
+  }));
+
   return (
     <Grid container spacing={3}>
-      <Grid container lg={12} >
+      <Grid container lg={12}>
         <Grid lg={3} md={6} xs={12}>
           <Autocomplete
             options={options.sort((a, b) => -b.firstLetter.localeCompare(a.firstLetter))}
-            getOptionLabel={(option) =>  `${option.code} -  ${option.location}`}
+            getOptionLabel={(option) => `${option.code} - ${option.location}`}
             sx={{ width: 300 }}
             renderInput={(params) => <TextField {...params} label="Zip Code" />}
             onChange={(event, newValue) => {
-              console.log("Selected value:", newValue); // Log the selected value
-              setZipCode(newValue); // Set the new zip code value
+              setZipCode(newValue);
               fetchLiveAQI(newValue);
             }}
           />
         </Grid>
         <Grid lg={9} md={6} xs={12}>
-          {/* <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "2.9rem", fontFamily: 'sans-serif' }}>
-            {zipCode.location ? `AQI information of ${zipCode.location}` : "Please input zipcode"}
-          </Typography> */}
+          {zipCode && (
+            <Typography variant="h5" sx={{ fontSize: '1.9rem', fontFamily: 'sans-serif' }}>
+              AQI information of {zipCode.location}
+            </Typography>
+          )}
         </Grid>
-        
       </Grid>
-      <Grid lg={6} md={6} xs={12}>
-       
-            <GaugeContainer
-              width={400}
-              height={400}
-              startAngle={-110}
-              endAngle={110}
-              value={pollution}
-            >
-              <GaugeReferenceArc />
-              <GaugeValueArc />
-              <GaugePointer />
-            </GaugeContainer>
-       
-      </Grid>
+
       <Grid lg={6} md={6} xs={12}>
         <Aqidata chartSeries={[63, 15, 22]} labels={['Desktop', 'Tablet', 'Phone']} sx={{ height: '100%' }} />
       </Grid>
-      <Grid container lg={12} md={6} xs={12}>
-        <Grid lg={4} md={6}>
-        <CardActionArea>
-          <Card sx={{ borderLeft: '9px solid  #E95478' }}>
-            <Grid container lg={12} md={6} xs={12}>
-              <Grid lg={9}>
-                  <CardContent >
-                    <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                      Particulate Matter
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                      (PM2.5)
-                    </Typography>
-                  </CardContent>
-              </Grid>
-              <Grid lg={3}>
-                  <CardContent >
-                    <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                    {liveAQI?liveAQI.components.pm2_5:'0'}
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                      µg/m³
-                    </Typography>
-                  </CardContent>
-              </Grid>
-            </Grid>
-          </Card>
-          </CardActionArea>
-        </Grid>
-        <Grid lg={4}>
-          <CardActionArea>
-            <Card sx={{ borderLeft: '9px solid  #EA8C34' }}>
-              <Grid container lg={12} md={6} xs={12}>
-                <Grid lg={9} md={6}>
-                  
-                    <CardContent >
-                      <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        Particulate Matter
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                        (PM10)
-                      </Typography>
-                    </CardContent>
-                  
-                </Grid>
-                <Grid lg={3} md={6}>
-                    <CardContent >
-                      <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                      {liveAQI?liveAQI.components.pm10:'0'}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                        µg/m³
-                      </Typography>
-                    </CardContent>
-                </Grid>
-              </Grid>
-            </Card>
-          </CardActionArea>
-        </Grid>
-        <Grid lg={4}>
-          <Card sx={{ borderLeft: '9px solid  #59b61f','&:hover': {backgroundColor: '#dcdfe4' }  }}>
-            <CardActionArea>
-              <Grid container lg={12} md={6} xs={12}>
-                  <Grid lg={9} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                          Carbon Monoxide
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          (CO)
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-                  <Grid lg={3} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        {liveAQI?liveAQI.components.co:'0'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          ppb
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-              </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-      </Grid>
-      <Grid container lg={12} md={6} xs={12}>
-        <Grid lg={4}>
-          <Card sx={{ borderLeft: '9px solid  #59b61f','&:hover': {backgroundColor: '#dcdfe4' }  }}>
-            <CardActionArea>
-              <Grid container lg={12} md={6} xs={12}>
-                  <Grid lg={9} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                          Sulfur Dioxide
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          (SO2)
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-                  <Grid lg={3} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        {liveAQI?liveAQI.components.so2:'0'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          ppb
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-              </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-        <Grid lg={4}>
-          <Card sx={{ borderLeft: '9px solid  #59b61f','&:hover': {backgroundColor: '#dcdfe4' }  }}>
-            <CardActionArea>
-              <Grid container lg={12} md={6} xs={12}>
-                  <Grid lg={9} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                          Ditrogen Dioxide
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          (NO2)
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-                  <Grid lg={3} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        {liveAQI?liveAQI.components.no2:'0'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          ppb
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-              </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-        <Grid lg={4}>
-          <Card sx={{ borderLeft: '9px solid  #59b61f','&:hover': {backgroundColor: '#dcdfe4' }  }}>
-            <CardActionArea>
-              <Grid container lg={12} md={6} xs={12}>
-                  <Grid lg={9} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        Ozon
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                        (O3)
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-                  <Grid lg={3} md={6}>
-                      <CardContent >
-                        <Typography gutterBottom variant="h5" component="div" sx={{ fontSize: "1.4rem" }}>
-                        {liveAQI?liveAQI.components.o3:'0'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontSize: "1.3rem" }} >
-                          ppb
-                        </Typography>
-                      </CardContent>
-                  </Grid>
-              </Grid>
-            </CardActionArea>
-          </Card>
-        </Grid>
-       
+          
+      
+      <Grid>
+        <TableContainer component={Paper} sx={{ maxWidth: 600, margin: 'auto', mt: 4, p: 2 }}>
+          <Typography
+          variant="h5"
+          sx={{ fontWeight: 'bold', fontFamily: 'sans-serif', textAlign: 'center', mb: 2 }}
+          >
+            Today's Feature Data for Air Quality Prediction
+          </Typography>
+
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: 'bold' }}>Feature</TableCell>
+            <TableCell sx={{ fontWeight: 'bold' }}>Value</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {featureHeaders.map((feature, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <img
+                  src={`assets/${feature.icon}`}
+                  alt={feature.name}
+                  style={{ width: 24, height: 24, marginRight: 8, verticalAlign: 'middle' }}
+                />
+                {feature.name}
+              </TableCell>
+              <TableCell>{featureData.length > index ? featureData[index] : 'N/A'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
       </Grid>
       <Grid lg={12} xs={12}>
         <HistoricAQI
@@ -338,39 +170,16 @@ export default function Page(): React.JSX.Element {
           sx={{ height: '100%' }}
         />
       </Grid>
-      <Dialog
-          open={open}
-          TransitionComponent={Transition}
-          keepMounted
-          onClose={handleClose}
-          aria-describedby="alert-dialog-slide-description"
-      >
-        <DialogTitle>{"Incorrect Zipcode"}</DialogTitle>
+
+      <Dialog open={open} TransitionComponent={Transition} keepMounted onClose={handleClose}>
+        <DialogTitle>Incorrect Zipcode</DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-slide-description">
-           Your entired zipcode is incorrect.
-           Please input correct zipcode.
-          </DialogContentText>
+          <DialogContentText>Your entered zipcode is incorrect. Please input the correct zipcode.</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Disagree</Button>
-          <Button onClick={handleClose}>Agree</Button>
+          <Button onClick={handleClose}>Close</Button>
         </DialogActions>
       </Dialog>
     </Grid>
-
   );
 }
-const ALLOWED_ZIP_CODES = [
-  { code: '95014', location: "Cupertino" },
-  { code: '92501', location: "Riverside" },
-  { code: '94536', location: "Fremont" },
-  { code: '30274', location: "Holtville" },
-  { code: '94110', location: "Riverdale" },
-  { code: "90805", location: "San Francisco" },
-  { code: '90201', location: "Long Beach" },
-  { code: '95630', location: "Bell Gardens" },
-  { code: '92231', location: "Folsom" },
- 
- 
-];

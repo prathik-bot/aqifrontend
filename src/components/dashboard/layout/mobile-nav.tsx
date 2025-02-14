@@ -97,14 +97,14 @@ export function MobileNav({ open, onClose }: MobileNavProps): React.JSX.Element 
             Check out our Pro solution template.
           </Typography>
         </div>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Box
             component="img"
             alt="AQI Dashboard"
             src="/assets/aqi.png"
             sx={{ height: 'auto', width: '160px' }}
           />
-        </Box>
+        </Box> */}
         <Button
           component="a"
           endIcon={<ArrowSquareUpRightIcon fontSize="var(--icon-fontSize-md)" />}
