@@ -3,10 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Grid from '@mui/material/Unstable_Grid2';
 import { HistoricAQI } from '@/components/dashboard/overview/historicaqi';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
-import CardActionArea from '@mui/material/CardActionArea';
 import { Aqidata } from '@/components/dashboard/overview/aqidata';
 import { getLiveAQI } from '../../services/aqiService';
 import TextField from '@mui/material/TextField';
@@ -22,7 +19,6 @@ import { useTheme } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import Slide from '@mui/material/Slide';
 import Papa from 'papaparse';
-import { Divider, Icon } from '@mui/material'; 
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper} from '@mui/material';
 
 const Transition = React.forwardRef((props, ref) => (
