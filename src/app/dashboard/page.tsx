@@ -81,6 +81,7 @@ export default function Page() {
   }, []);
   
   const featureHeaders = [
+    { name: 'AQI', icon: 'aqi.png' },
     { name: 'PM2.5', icon: 'pm25.png' },
     { name: 'Temperature', icon: 'tempF.png' },
     { name: 'Humidity', icon: 'humidity.png' },
@@ -129,7 +130,7 @@ export default function Page() {
           variant="h5"
           sx={{ fontWeight: 'bold', fontFamily: 'sans-serif', textAlign: 'center', mb: 2 }}
           >
-            Today's Feature Data for Air Quality Prediction
+            Today's AQI & Feature Data for Air Quality Prediction
           </Typography>
 
       <Table>

@@ -1,2 +1,2 @@
-pm2.5,temeprature,humidity,wind speed,pressure,percipitation,cloud cover
-39.7,12,43,5.56,35.0,1020,35,34.1
+aqi,pm2.5,temeprature,humidity,wind speed,pressure,percipitation,cloud cover
+58,39.7,12,43,5.56,35.0,1020,35,34.1
