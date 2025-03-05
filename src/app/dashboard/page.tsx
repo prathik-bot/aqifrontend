@@ -21,6 +21,7 @@ import Slide from '@mui/material/Slide';
 import Papa from 'papaparse';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper} from '@mui/material';
 
+
 const Transition = React.forwardRef((props, ref) => (
   <Slide direction="up" ref={ref} {...props} />
 ));
@@ -113,8 +114,8 @@ export default function Page() {
         <Grid lg={9} md={6} xs={12}>
           {zipCode && (
             <Typography variant="h5" sx={{ fontSize: '1.9rem', fontFamily: 'sans-serif' }}>
-              AQI information of {zipCode.location}
-            </Typography>
+            AQI information of {zipCode.location} - {new Date().toLocaleDateString()}
+          </Typography>
           )}
         </Grid>
       </Grid>
