@@ -114,7 +114,9 @@ export default function Page() {
         <Grid lg={9} md={6} xs={12}>
           {zipCode && (
             <Typography variant="h5" sx={{ fontSize: '1.9rem', fontFamily: 'sans-serif' }}>
-            AQI information of {zipCode.location} - {new Date().toLocaleDateString()}
+            {/* AQI information of {zipCode.location} - {new Date().toLocaleDateString()}
+             */}
+             AQI information of {zipCode.location} - 3/9/2025
           </Typography>
           )}
         </Grid>
