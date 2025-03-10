@@ -1,17 +1,12 @@
 # AQI display app
-Next.js, React.js, AQI API
+Next.js, React.js, AQI API (for integration)
 
-# Table of Contens
 
-- [Installation](#installation)
-- [Technology Stack](#technology-stack)
-- [Target Site](#target-site)
 
 # Installation
 
 ### Clone the repository to your local machine:
-    cd test_project
-	cd front(react)
+    cd aqifrontend
 
 ### Install dependencies
     npm install
@@ -19,17 +14,10 @@ Next.js, React.js, AQI API
 ### Run the program
     npm dev
 
-### Run the backend program
-	cd backend
-	venv\Scripts\active
-	uvicorn main:app --reload
-
+# Target Site
+    http://localhost:3000/
 
 # Technology Stack
 - Built with node version 18.17.0
 - Built with next version 9.6.7
-
-# Target Site
-    http://localhost:3000/
-
 
