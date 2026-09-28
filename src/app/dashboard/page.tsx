@@ -18,7 +18,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import Slide from '@mui/material/Slide';
-import Papa from 'papaparse';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper} from '@mui/material';
 
 
@@ -48,6 +47,8 @@ export default function Page() {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
   const [featureData, setFeatureData] = useState<(number | 'N/A')[]>([]);
+  const [predictedAqi, setPredictedAqi] = useState<number | null>(null);
+  const [asOfDate, setAsOfDate] = useState<string | null>(null);
 
 
   const handleClose = () => setOpen(false);
@@ -60,36 +61,40 @@ export default function Page() {
       setOpen(true);
     }
   };
+
   useEffect(() => {
-    fetch('/feature.csv')
-      .then(response => response.text())
-      .then(csvText => {
-        const parsedData = Papa.parse(csvText, { header: false, skipEmptyLines: true }).data;
-        
-        if (parsedData.length > 1) {
-          // Convert values to numbers and handle NaN/Infinity cases
-          const numericData = parsedData[1].map(value => {
-            const num = parseFloat(value.trim()); // Trim spaces and convert to number
-            return isFinite(num) ? num : 'N/A'; // Replace Inf/NaN with 'N/A'
-          });
-  
-          setFeatureData(numericData);
-          console.log('Parsed Feature Data:', numericData);
+    fetch('http://localhost:5001/live-aqi')
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          console.error('Live AQI error:', data.error);
+          return;
         }
+        setFeatureData([
+          data.live_aqi_estimate,
+          data.pm2_5,
+          data.temperature_c,
+          data.humidity_pct,
+          data.wind_speed_ms,
+          data.pressure_hpa,
+          data.precipitation_mm,
+          data.cloud_cover_pct,
+        ]);
+        setPredictedAqi(data.model_predicted_aqi);
+        setAsOfDate(data.date);
       })
-      
-      .catch(error => console.error('Error loading CSV:', error));
+      .catch(error => console.error('Error loading live AQI data:', error));
   }, []);
-  
+
   const featureHeaders = [
     { name: 'AQI', icon: 'aqi.png' },
     { name: 'PM2.5', icon: 'pm25.png' },
-    { name: 'Temperature', icon: 'tempF.png' },
-    { name: 'Humidity', icon: 'humidity.png' },
-    { name: 'Wind Speed', icon: 'wind.png' },
-    { name: 'Pressure', icon: 'pressure.png' },
-    { name: 'Precipitation', icon: 'precipitation.png' },
-    { name: 'Cloud Cover', icon: 'cloud.png' },
+    { name: 'Temperature (°C)', icon: 'tempF.png' },
+    { name: 'Humidity (%)', icon: 'humidity.png' },
+    { name: 'Wind Speed (m/s)', icon: 'wind.png' },
+    { name: 'Pressure (hPa)', icon: 'pressure.png' },
+    { name: 'Precipitation (mm)', icon: 'precipitation.png' },
+    { name: 'Cloud Cover (%)', icon: 'cloud.png' },
   ];
   const options = ALLOWED_ZIP_CODES.map((option) => ({
     firstLetter: /[0-9]/.test(option.code[0]) ? '0-9' : option.code[0].toUpperCase(),
@@ -114,9 +119,7 @@ export default function Page() {
         <Grid lg={9} md={6} xs={12}>
           {zipCode && (
             <Typography variant="h5" sx={{ fontSize: '1.9rem', fontFamily: 'sans-serif' }}>
-            {/* AQI information of {zipCode.location} - {new Date().toLocaleDateString()}
-             */}
-             AQI information of {zipCode.location} - 3/9/2025
+             AQI information of {zipCode.location} - {new Date().toLocaleDateString()}
           </Typography>
           )}
         </Grid>
@@ -135,6 +138,16 @@ export default function Page() {
           >
             Today's AQI & Feature Data for Air Quality Prediction
           </Typography>
+          {asOfDate && (
+            <Typography variant="body2" sx={{ textAlign: 'center', mb: 1, color: 'text.secondary' }}>
+              San Jose - Jackson, CA · {asOfDate}
+            </Typography>
+          )}
+          {predictedAqi !== null && (
+            <Typography variant="subtitle1" sx={{ textAlign: 'center', mb: 2, fontWeight: 'bold' }}>
+              Model's Predicted AQI: {predictedAqi}
+            </Typography>
+          )}
 
       <Table>
         <TableHead>
