@@ -63,7 +63,7 @@ export default function Page() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5001/live-aqi')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/live-aqi`)
       .then(response => response.json())
       .then(data => {
         if (data.error) {

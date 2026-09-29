@@ -31,7 +31,7 @@ export function Aqidata({ sx }: AqidataProps): React.JSX.Element {
   };
 
   React.useEffect(() => {
-    fetch('http://localhost:5001/forecast-7day')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/forecast-7day`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error || !data.forecast) {
