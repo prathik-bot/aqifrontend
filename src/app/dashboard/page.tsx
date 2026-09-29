@@ -19,11 +19,15 @@ import { useTheme } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import Slide from '@mui/material/Slide';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper} from '@mui/material';
+import type { TransitionProps } from '@mui/material/transitions';
 
 
-const Transition = React.forwardRef((props, ref) => (
-  <Slide direction="up" ref={ref} {...props} />
-));
+const Transition = React.forwardRef(function Transition(
+  props: TransitionProps & { children: React.ReactElement },
+  ref: React.Ref<unknown>,
+) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const GroupHeader = styled('div')(({ theme }) => ({
   position: 'sticky',
@@ -41,8 +45,8 @@ const ALLOWED_ZIP_CODES = [
 ];
 
 export default function Page() {
-  const [zipCode, setZipCode] = useState(null);
-  const [liveAQI, setLiveAQI] = useState(null);
+  const [zipCode, setZipCode] = useState<any>(null);
+  const [liveAQI, setLiveAQI] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -53,7 +57,7 @@ export default function Page() {
 
   const handleClose = () => setOpen(false);
 
-  const fetchLiveAQI = async (selectedZipCode) => {
+  const fetchLiveAQI = async (selectedZipCode: any) => {
     try {
       const data = await getLiveAQI(selectedZipCode.code);
       setLiveAQI(data);
@@ -126,7 +130,7 @@ export default function Page() {
       </Grid>
 
       <Grid lg={6} md={6} xs={12}>
-        <Aqidata chartSeries={[63, 15, 22]} labels={['Desktop', 'Tablet', 'Phone']} sx={{ height: '100%' }} />
+        <Aqidata sx={{ height: '100%' }} />
       </Grid>
           
       
@@ -175,13 +179,7 @@ export default function Page() {
     </TableContainer>
       </Grid>
       <Grid lg={12} xs={12}>
-        <HistoricAQI
-          chartSeries={[
-            { name: 'This year', data: [18, 16, 5, 8, 3, 14, 14, 16, 17, 19, 18, 20] },
-            { name: 'Last year', data: [12, 11, 4, 6, 2, 9, 9, 10, 11, 12, 13, 13] },
-          ]}
-          sx={{ height: '100%' }}
-        />
+        <HistoricAQI sx={{ height: '100%' }} />
       </Grid>
 
       <Dialog open={open} TransitionComponent={Transition} keepMounted onClose={handleClose}>
